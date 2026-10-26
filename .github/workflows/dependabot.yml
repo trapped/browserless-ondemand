@@ -25,7 +25,8 @@ jobs:
           [ -n "$pr" ] || exit 0
           state=$(gh api "repos/$REPO/pulls/$pr" --jq .state)
           if [ "$state" = open ]; then
-            gh pr merge "$pr" --repo "$REPO" --squash --match-head-commit "$HEAD_SHA"
+            [ "$(gh api "repos/$REPO/pulls/$pr" --jq .head.sha)" = "$HEAD_SHA" ] || exit 0
+            gh api "repos/$REPO/pulls/$pr/merge" --method PUT -f merge_method=squash -f sha="$HEAD_SHA" --jq '.merged' | grep -qx true
           else
             [ "$(gh api "repos/$REPO/pulls/$pr" --jq .merged)" = true ] || exit 0
           fi
