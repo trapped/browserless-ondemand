@@ -3,7 +3,7 @@ set -euo pipefail
 image=${1:-browserless-ondemand:test}
 name=ondemand-smoke-$RANDOM
 trap 'docker logs "$name"; docker rm -f "$name" >/dev/null' EXIT
-docker run -d --name "$name" -e TOKEN=smoke-only -e ONDEMAND_IDLE_TIMEOUT=3s "$image"
+docker run -d --tmpfs /tmp:rw,size=512m --shm-size=512m -e XDG_CONFIG_HOME=/tmp/config -e XDG_CACHE_HOME=/tmp/cache --name "$name" -e TOKEN=smoke-only -e ONDEMAND_IDLE_TIMEOUT=3s "$image"
 for attempt in $(seq 1 30); do
   if docker exec "$name" curl -fsS http://localhost:3000/_ondemand/health >/dev/null; then break; fi
   sleep 1

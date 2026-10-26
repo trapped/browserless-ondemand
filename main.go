@@ -69,6 +69,10 @@ func (s *supervisor) acquire(ctx context.Context) error {
 		}
 		_, port, _ := net.SplitHostPort(s.target)
 		cmd.Env = append(cmd.Env, "PORT="+port, "HOST=127.0.0.1")
+		// Keep upstream-generated public URLs on the supervisor's port.
+		if os.Getenv("PROXY_URL") == "" && os.Getenv("EXTERNAL") == "" {
+			cmd.Env = append(cmd.Env, "PROXY_URL=http://"+net.JoinHostPort(env("HOST", "0.0.0.0"), env("PORT", "3000")))
+		}
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if e := cmd.Start(); e != nil {

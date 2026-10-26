@@ -50,9 +50,8 @@ contains no backend state or credentials.
 Cold starts add latency: clients must allow sufficient connect time. Browserless
 session reconnect/reuse state is lost when the backend stops; an open WebSocket
 is protected, but disconnected reconnect sessions are not. Configure the idle
-timeout accordingly. Protocol discovery responses are passed through unchanged;
-clients that follow backend-generated absolute URLs should use the direct public
-WebSocket endpoint instead. Streaming, uploads and WebSocket traffic are proxied
+timeout accordingly. Upstream-generated URLs retain the public HOST/PORT by default; set upstream
+`PROXY_URL` when using a public hostname or TLS reverse proxy. Streaming, uploads and WebSocket traffic are proxied
 without application-level buffering. This is a sleep/wake overlay, not a sandbox,
 resource limiter or multi-container autoscaler.
 
