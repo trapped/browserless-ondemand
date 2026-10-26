@@ -1,17 +1,33 @@
 name: Dependabot auto-merge
 on:
-  pull_request_target:
-    types: [opened, reopened, synchronize]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 jobs:
   auto-merge:
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      # Never check out or execute PR content in this privileged workflow.
-      - run: gh pr merge --auto --squash "$PR_URL"
+      # Trusted default-branch code only. Never check out PR content.
+      - name: Merge tested Dependabot commit and explicitly dispatch main CI
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          pr=$(gh api "repos/$REPO/commits/$HEAD_SHA/pulls" --jq \
+            '.[] | select(.user.login == "dependabot[bot]" and .base.ref == "main" and .head.repo.full_name == .base.repo.full_name) | .number' | head -1)
+          [ -n "$pr" ] || exit 0
+          state=$(gh api "repos/$REPO/pulls/$pr" --jq .state)
+          if [ "$state" = open ]; then
+            gh pr merge "$pr" --repo "$REPO" --squash --match-head-commit "$HEAD_SHA"
+          else
+            [ "$(gh api "repos/$REPO/pulls/$pr" --jq .merged)" = true ] || exit 0
+          fi
+          # GITHUB_TOKEN merges do not trigger push workflows. Explicit dispatch does.
+          gh workflow run ci.yml --repo "$REPO" --ref main
