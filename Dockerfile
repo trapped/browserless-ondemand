@@ -4,7 +4,7 @@ COPY go.mod main.go ./
 ARG TARGETOS TARGETARCH
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /ondemand .
 
-FROM ghcr.io/browserless/chromium:2.57.3
+FROM ghcr.io/browserless/chromium:v2.57.3
 COPY --from=build /ondemand /usr/local/bin/browserless-ondemand
 LABEL org.opencontainers.image.source="https://github.com/trapped/browserless-ondemand"
 ENTRYPOINT ["/usr/local/bin/browserless-ondemand"]
