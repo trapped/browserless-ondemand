@@ -6,6 +6,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags=
 
 FROM ghcr.io/browserless/chromium:v2.57.3
 COPY --from=build /ondemand /usr/local/bin/browserless-ondemand
+COPY LICENSE /usr/share/doc/browserless-ondemand/LICENSE
 LABEL org.opencontainers.image.source="https://github.com/trapped/browserless-ondemand"
 ENTRYPOINT ["/usr/local/bin/browserless-ondemand"]
 CMD ["./scripts/start.sh"]
